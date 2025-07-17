@@ -110,35 +110,35 @@ jobs:
         with:
           name: Basis-Client-${{ matrix.targetPlatform }}
           path: |
-            build/${{ env.buildName }}
-            !build/${{ env.buildName }}/${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
+            build/${{ matrix.targetPlatform }}
+            !build/${{ matrix.targetPlatform }}/${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
       - name: "Upload client symbols artifact"
         timeout-minutes: 4
         uses: actions/upload-artifact@v4
         with:
           name: Basis-Symbols-Client-${{ matrix.targetPlatform }}
           path: |
-            build/${{ env.buildName }}/${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
+            build/${{ matrix.targetPlatform }}/${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.6
         if: github.ref_type == 'tag' && matrix.targetPlatform != 'Android'
         with:
           type: "zip"
-          directory: build/${{ env.buildName }}
-          filename: "Basis Unity ${{ matrix.targetPlatform }}.zip"
+          directory: build/${{ matrix.targetPlatform }}
+          filename: "${{ github.workspace }}/Basis Unity ${{ matrix.targetPlatform }}.zip"
           exclusions: ${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
       - name: "Release client zip"
         if: github.ref_type == 'tag' && matrix.targetPlatform != 'Android'
         timeout-minutes: 5
         uses: "softprops/action-gh-release@v2"
         with:
-          files: build/${{ env.buildName }}/Basis Unity ${{ matrix.targetPlatform }}.zip
+          files: "${{ github.workspace }}/Basis Unity ${{ matrix.targetPlatform }}.zip"
       - name: "Release client apk"
         if: github.ref_type == 'tag' && matrix.targetPlatform == 'Android'
         timeout-minutes: 5
         uses: "softprops/action-gh-release@v2"
         with:
-          files: build/${{ env.buildName }}/${{ env.buildName }}.apk
+          files: build/${{ matrix.targetPlatform }}/${{ env.buildName }}.apk
 
   build-server:
     name: Build server on Ubuntu
@@ -184,7 +184,7 @@ jobs:
         timeout-minutes: 5
         uses: "softprops/action-gh-release@v2"
         with:
-          files: Basis Server ${{ matrix.targetPlatform }}.zip
+          files: build/Basis Server ${{ matrix.targetPlatform }}.zip
 
   compile-unitypackages:
     name: Build .unitypackage files
