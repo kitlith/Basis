@@ -58,7 +58,7 @@ jobs:
           docker-images: false
           swap-storage: false
       - name: "Checkout repository"
-        timeout-minutes: 2
+        timeout-minutes: 5
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -104,41 +104,63 @@ jobs:
         with:
           path: ${{ env.projectPath }}/Library
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+      - name: "Only retain latest cache"
+        if: always() && github.ref_name == 'developer'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          OLD_CACHE_IDS=$(gh cache list --sort created_at --key Library-${{ env.projectPath }}-${{ matrix.targetPlatform }}- --json id --jq '.[1:] | map(.id) | @sh')
+          for cache_id in $OLD_CACHE_IDS; do
+            gh cache delete $cache_id
+          done
       - name: "Upload client artifact"
         timeout-minutes: 2
         uses: actions/upload-artifact@v4
         with:
           name: Basis-Client-${{ matrix.targetPlatform }}
           path: |
-            build/${{ env.buildName }}
-            !build/${{ env.buildName }}/${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
+            build/${{ matrix.targetPlatform }}
+            !build/${{ matrix.targetPlatform }}/${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
       - name: "Upload client symbols artifact"
         timeout-minutes: 4
         uses: actions/upload-artifact@v4
         with:
           name: Basis-Symbols-Client-${{ matrix.targetPlatform }}
           path: |
-            build/${{ env.buildName }}/${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
-      - name: Archive Release
+            build/${{ matrix.targetPlatform }}/${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
+      - name: Archive client
         uses: thedoctor0/zip-release@0.7.6
         if: github.ref_type == 'tag' && matrix.targetPlatform != 'Android'
         with:
           type: "zip"
-          directory: build/${{ env.buildName }}
-          filename: "Basis Unity ${{ matrix.targetPlatform }}.zip"
-          exclusions: ${{ env.buildName }}_BackUpThisFolder_ButDontShipItWithYourGame
+          directory: build/${{ matrix.targetPlatform }}
+          filename: "${{ github.workspace }}/Basis Unity ${{ matrix.targetPlatform }}.zip"
+          # This uses a wildcard because this action doesn't work correctly with spaces in exclusions.
+          exclusions: "*_BackUpThisFolder_ButDontShipItWithYourGame"
+      - name: Archive symbols
+        uses: thedoctor0/zip-release@0.7.6
+        if: github.ref_type == 'tag' && matrix.targetPlatform != 'Android'
+        with:
+          type: "zip"
+          directory: build/${{ matrix.targetPlatform }}
+          filename: "${{ github.workspace }}/Basis Unity ${{ matrix.targetPlatform }} Symbols.zip"
+          # This uses a wildcard because this action doesn't work correctly with spaces in path.
+          path: "*_BackUpThisFolder_ButDontShipItWithYourGame"
       - name: "Release client zip"
         if: github.ref_type == 'tag' && matrix.targetPlatform != 'Android'
         timeout-minutes: 5
         uses: "softprops/action-gh-release@v2"
         with:
-          files: build/${{ env.buildName }}/Basis Unity ${{ matrix.targetPlatform }}.zip
+          files: |
+            "${{ github.workspace }}/Basis Unity ${{ matrix.targetPlatform }}.zip"
+            "${{ github.workspace }}/Basis Unity ${{ matrix.targetPlatform }} Symbols.zip"
       - name: "Release client apk"
         if: github.ref_type == 'tag' && matrix.targetPlatform == 'Android'
         timeout-minutes: 5
         uses: "softprops/action-gh-release@v2"
         with:
-          files: build/${{ env.buildName }}/${{ env.buildName }}.apk
+          files: build/${{ matrix.targetPlatform }}/${{ env.buildName }}.apk
 
   build-server:
     name: Build server on Ubuntu
@@ -154,7 +176,7 @@ jobs:
           - win
     steps:
       - name: "Checkout repository"
-        timeout-minutes: 2
+        timeout-minutes: 5
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -184,7 +206,7 @@ jobs:
         timeout-minutes: 5
         uses: "softprops/action-gh-release@v2"
         with:
-          files: Basis Server ${{ matrix.targetPlatform }}.zip
+          files: build/Basis Server ${{ matrix.targetPlatform }}.zip
 
   compile-unitypackages:
     name: Build .unitypackage files
