@@ -9,6 +9,10 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+using Dummy.Quic.Sample;
+using System.Threading.Tasks;
+using System.Text;
+
 /// <summary>
 /// Central per-frame driver that coordinates device actions, networking compute/apply,
 /// physics scheduling for JigglePhysics, and various local simulation hooks.
@@ -61,11 +65,17 @@ public class BasisEventDriver : MonoBehaviour
     /// </summary>
 
     public static BasisEventDriver Instance;
+
     /// <summary>
     /// Unity enable hook. Subscribes render callbacks (client), initializes scene and network drivers.
     /// </summary>
     public void OnEnable()
     {
+        Dummy.Quic.QuicLog.Info = (s) => Debug.Log(s);
+        Dummy.Quic.QuicLog.Warn = (s) => Debug.LogWarning(s);
+        Dummy.Quic.QuicLog.Error = (s) => Debug.LogError(s);
+        Task.Run(() => Sample.RunClient(Encoding.UTF8.GetBytes("pi.kitl.ing"), insecure: true));
+        Task.Run(() => Sample.RunClient(Encoding.UTF8.GetBytes("10.0.0.96"), insecure: true));
         Instance = this;
 #if UNITY_SERVER
 #else
