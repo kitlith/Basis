@@ -69,13 +69,13 @@ namespace Basis.Network.Core {
             _position = position;
         }
 
-        // public void SetSource(NetDataWriter dataWriter)
-        // {
-        //     _data = dataWriter.Data;
-        //     _position = 0;
-        //     _offset = 0;
-        //     _dataSize = dataWriter.Length;
-        // }
+        public void SetSource(NetDataWriter dataWriter)
+        {
+            _data = dataWriter.Data;
+            _position = 0;
+            _offset = 0;
+            _dataSize = dataWriter.Length;
+        }
 
         public void SetSource(byte[] source)
         {
@@ -103,10 +103,10 @@ namespace Basis.Network.Core {
 
         }
 
-        // public NetDataReader(NetDataWriter writer)
-        // {
-        //     SetSource(writer);
-        // }
+        public NetDataReader(NetDataWriter writer)
+        {
+            SetSource(writer);
+        }
 
         public NetDataReader(byte[] source)
         {
